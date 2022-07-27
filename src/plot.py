@@ -44,6 +44,15 @@ def plotHM(z, normalize=True):
 
     
 def plotCuts(z, normalize=True):
+    """
+    Plots azimuth and elevation cuts. Cuts are made where z-matrix is maximun
+
+    Args:
+        z: _description_
+        normalize: _description_. Defaults to True.
+    """    
+    if len(z.shape) != 2: 
+        raise ValueError("Matrix must be 2-dimmensional to plot cuts")
     if normalize:
         ylim_sup = 0;
         Z = z - np.max(z)
