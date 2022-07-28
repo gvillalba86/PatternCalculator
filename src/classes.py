@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 # COSINE power 2D
-def cos_power_2d(x, y, power=2):
-    # We add pi/2to the y-term because we want maximun of radiation to be on pi=0, theta=90 (as in antenna arrays)
-    res = np.abs(np.float_power(np.cos(x), power, dtype=complex) * np.float_power(np.cos(y+np.pi/2), power, dtype=complex))
+def cos_power_2d(x:int, y, power=2):
+    # We add pi/2to the y-term because we want maximun of radiation to be on 
+    # pi=0, theta=90 (as in antenna arrays)
+    res = np.abs(np.float_power(np.cos(x), power, dtype=complex) * 
+        np.float_power(np.cos(y+np.pi/2), power, dtype=complex))
     size = x.shape[1]
     res[:,:size//4] = np.finfo(np.float64).eps
     res[:,size//4*3:] = np.finfo(np.float64).eps
@@ -42,7 +45,7 @@ class Array:
     
     
     def __init__(self, elements, pattern=None):
-        self.elements = elements    # instance variable unique to each instance
+        self.elements = elements 
         self.nElements = len(self.elements)
         # Phi/Theta points
         self.nPhi = 1000
@@ -62,15 +65,15 @@ class Array:
         
     def plot_array(self):
         if all(ele.xpos == self.elements[0].xpos for ele in self.elements):
-            plt.rcParams["figure.figsize"] = [7.00, 3.50]
-            plt.rcParams["figure.autolayout"] = True
-            plt.xlabel('Z-position (mm)')
-            plt.ylabel('Y-position (mm)')
-            plt.grid()
+            fig, ax = plt.subplots(1, 1, figsize=(10,3.5))
+            ax.set_xlabel('Z-position (mm)')
+            ax.set_ylabel('Y-position (mm)')
+            sns.set_theme()
             for ele in self.elements:
-                plt.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
-                #plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
-                plt.gca().annotate(f'{ele.amplitude} ∠ {ele.phase}º', (ele.zpos*1000, ele.ypos*1000))
+                ax.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, 
+                    markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
+                # plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
+                ax.annotate(f'{ele.amplitude}, {ele.phase}º', (ele.zpos*1000, ele.ypos*1000))
             plt.show()
         else:
             raise ValueError('Cannot plot 3D arrays')
@@ -110,7 +113,6 @@ class Array:
         for eleIdx, element in enumerate(self.elements):
             kd = CalculateRelativePhase(element.get_position(), Lambda, self.PHI, self.THETA)
             AF += wAmp[eleIdx] * np.exp((kd + element.phase) * 1j)
-
         # Power in dB
         AFdB = 20*np.log10(np.abs(AF))
     
