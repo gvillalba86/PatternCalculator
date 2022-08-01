@@ -1,23 +1,61 @@
+from cmath import polar
+from matplotlib import projections
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Plot cut
-def plot_polar (x, y, normalize=False):
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(projection='polar')
+def plotCutsPolar (z, normalize=True):
+    """
+    Plots azimuth and elevation cuts in polar coordinates. Cuts are made where input z-matrix is maximun
+
+    Args:
+        z: 2-dimensional numpy array with data
+        normalize: indicates if plotting must be normalized. Defaults to True.
+        
+    Raises:
+        ValueError: If matrix is not 2-dimensional
+    """    
+    
+    if len(z.shape) != 2: 
+        raise ValueError("Matrix must be 2-dimmensional to plot cuts")
+    
+    # Normalization
     if normalize:
-        ylim_sup = 0;
-        xlim_inf = -40;
-        Y = y - np.max(y)
+        zlim_sup = 0;
+        Z = z - np.max(z)
     else:
-        ylim_sup = (np.max(y)//5+1)*5;
-        xlim_inf = ylim_sup-40;
-        Y = y
-    ax.plot(x, Y)
-    ax.plot(x, np.repeat(np.max(Y)-3, len(x)), color='red', linestyle='dashed', linewidth=2)
-    ax.set_ylim((xlim_inf, ylim_sup))
-    ax.set_rlabel_position(0)
+        zlim_sup = (np.max(z)//5+1)*5;
+        Z = z
+
+    sns.set_theme()
+    fig = plt.figure(figsize=(16, 6))
+    
+    max_theta, max_phi = np.unravel_index(np.argmax(z, axis=None), z.shape)
+    
+    # Plot horizontal pattern
+    ax = plt.subplot(1, 2, 1, polar=True)
+    x = np.linspace(-180, 180, z.shape[1])
+    ax.plot(x, Z[max_theta, :], linewidth=2)
+    ax.plot(np.repeat(zlim_sup, z.shape[1]), linewidth=2, color='indianred', linestyle='dashed')
+    ax.set_title('Horizontal cut', fontsize=18)
+    ax.set_xlabel('Azimuth ($\phi$)', fontsize=14)
+
+    # Plot vertical pattern
+    ax = plt.subplot(1, 2, 2, polar=True)
+    x = np.linspace(0, 180, z.shape[0])
+    ax.plot(x, Z[:, max_phi], linewidth=2)
+    ax.plot(np.repeat(zlim_sup, z.shape[1]), linewidth=2, color='indianred', linestyle='dashed')
+    ax.set_title('Vertical cut', fontsize=18)
+    ax.set_xlabel('Elevation ($\\theta$)', fontsize=14)
+
+    # Place info
+    props = dict(boxstyle='round', facecolor='lightcoral', alpha=0.5)
+    param_str = '\n'.join((f'Gain: {np.round(np.max(z),2)} dB',
+                         f'HBW: {np.sum(z[max_theta, :]>np.max(z)-3)*360/z.shape[1]}º',
+                         f'VBW: {np.sum(z[:, max_phi]>np.max(z)-3)*180/z.shape[0]}º'))
+    ax.text(1.05, 1, param_str, transform=ax.transAxes, fontsize=14, verticalalignment='top', bbox=props)
+        
     plt.show()
 
     
@@ -67,14 +105,14 @@ def plotHM(z, normalize=True):
     
 def plotCuts(z, normalize=True):
     """
-    Plots azimuth and elevation cuts. Cuts are made where input z-matrix is maximun
+    Plots azimuth and elevation cuts. Cuts are made where input z-matrix is maximum
 
     Args:
-        z: 2-dimmensinal numpy array with data
-        normalize: indicates if protting must be normalized
+        z: 2-dimensional numpy array with data
+        normalize: indicates if plotting must be normalized. Defaults to True.
 
     Raises:
-        ValueError: If matrix is not 2-dimmensional
+        ValueError: If matrix is not 2-dimensional
     """
 
     if len(z.shape) != 2: 
@@ -82,25 +120,25 @@ def plotCuts(z, normalize=True):
 
     # Normalization
     if normalize:
-        ylim_sup = 0;
+        zlim_sup = 0;
         Z = z - np.max(z)
     else:
-        ylim_sup = (np.max(z)//5+1)*5;
+        zlim_sup = (np.max(z)//5+1)*5;
         Z = z
 
     sns.set_theme()
-    fig, ax = plt.subplots(1,2, figsize=(16,6), sharey=True)
+    _, ax = plt.subplots(1,2, figsize=(16,6), sharey=True)
     max_theta, max_phi = np.unravel_index(np.argmax(z, axis=None), z.shape)
 
     # Plots
     ax[0].plot(Z[max_theta, :], linewidth=2)
     ax[1].plot(Z[:, max_phi], linewidth=2)
-    ax[0].plot(np.repeat(ylim_sup, z.shape[1]), linewidth=2, color='indianred', linestyle='dashed')
-    ax[1].plot(np.repeat(ylim_sup, z.shape[0]), linewidth=2, color='indianred', linestyle='dashed')
+    ax[0].plot(np.repeat(zlim_sup, z.shape[1]), linewidth=2, color='indianred', linestyle='dashed')
+    ax[1].plot(np.repeat(zlim_sup, z.shape[0]), linewidth=2, color='indianred', linestyle='dashed')
 
     # Set limits & axis
-    ax[0].set_ylim(ylim_sup-30, ylim_sup)
-    ax[1].set_ylim(ylim_sup-30, ylim_sup)
+    ax[0].set_ylim(zlim_sup-30, zlim_sup)
+    ax[1].set_ylim(zlim_sup-30, zlim_sup)
     ax[0].set_xticks(np.linspace(0, z.shape[1], num=13))
     ax[0].set_xticklabels([str(i)+'º' for i in np.arange(0,361,30)], rotation=0)
     ax[1].set_xticks(np.linspace(0, z.shape[0], num=7))

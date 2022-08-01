@@ -1,10 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from skimage.transform import resize
 
 
 # COSINE power 2D
-def cos_power_2d(x:int, y, power=2):
+def cos_power_2d(x:np.ndarray, y:np.ndarray, power:float=2):
+    """
+    Generates a cosine power radiant element in 2D
+
+    Args:
+        x: vector with x values
+        y: vector with y values
+        power: power of the cosine. The higher, the narrower the beamwith you get. 
+        Defaults to 2.
+
+    Returns:
+        Radiant element
+    """    
     # We add pi/2to the y-term because we want maximun of radiation to be on 
     # pi=0, theta=90 (as in antenna arrays)
     res = np.abs(np.float_power(np.cos(x), power, dtype=complex) * 
@@ -17,9 +30,7 @@ def cos_power_2d(x:int, y, power=2):
 
 class RadiantElement:
     """
-    Summation of field contributions from each element in array, at frequency freq at theta 0°-95°, phi 0°-360°.
-    Element = xPos, yPos, zPos, ElementAmplitude, ElementPhaseWeight
-    Returns RadiantElement[theta, phi, elementSum]
+    Radiant Element class
     """
     
     def __init__(self, xpos, ypos, zpos, amplitude=1, phase=0):
@@ -38,56 +49,72 @@ class RadiantElement:
     
 class Array:
     """
-    Summation of field contributions from each element in array, at frequency freq at theta 0°-95°, phi 0°-360°.
-    Element = xPos, yPos, zPos, ElementAmplitude, ElementPhaseWeight
-    Returns arrayFactor[theta, phi, elementSum]
+    Array class
     """
     
-    
-    def __init__(self, elements, pattern=None):
+    def __init__(self, elements:list, pattern=None):
+        # Elements in the array
         self.elements = elements 
         self.nElements = len(self.elements)
+        
         # Phi/Theta points
         self.nPhi = 1000
         self.nTheta = 500
         phi = np.linspace(-np.pi, np.pi, self.nPhi)
         theta = np.linspace(0, np.pi, self.nTheta)
         self.PHI, self.THETA = np.meshgrid(phi, theta)
+        
         # Element pattern
         if pattern is not None:
-            if pattern.shape == (self.nPhi, self.nTheta):
-                self.elePattern = pattern
-            else:
-                self.elePattern = pattern
+            self.setElementPattern(pattern)
         else:
+            # If pattern is not provided, we use cosine power
             self.elePattern = cos_power_2d(self.PHI, self.THETA, power=2)
-        
-        
-    def plot_array(self):
-        if all(ele.xpos == self.elements[0].xpos for ele in self.elements):
-            fig, ax = plt.subplots(1, 1, figsize=(10,3.5))
-            ax.set_xlabel('Z-position (mm)')
-            ax.set_ylabel('Y-position (mm)')
-            sns.set_theme()
-            for ele in self.elements:
-                ax.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, 
-                    markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
-                # plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
-                ax.annotate(f'{ele.amplitude}, {ele.phase}º', (ele.zpos*1000, ele.ypos*1000))
-            plt.show()
+
+
+    def setElementPattern(self, pattern:np.ndarray):
+        """
+        Sets the radiant element pattern to use for the array. If the given pattern does not match
+        the size for the pattern os the array given by self.nPhi and self.nTheta, it will be interpolated.
+
+        Args:
+            pattern: Element pattern to use, for all space theta/phi. It assumes theta goes
+            from 0 to pi and phi from -pi/2 to pi/2.
+        """
+        if pattern.shape == (self.nPhi, self.nTheta):
+            # If pattern is provided annd matches the Pattern size,
+            # we use it directly
+            self.elePattern = pattern
         else:
-            raise ValueError('Cannot plot 3D arrays')
+            # If pattern is provided but do not match the size of the
+            # pattern size, we interpolate
+            self.elePattern = resize(pattern, (self.nTheta,self.nPhi))
+
 
             
-    def arrayFactor(self, freq):
+    def arrayFactor(self, freq:float):
+        """
+        Computes the array factor for the array and returns it for all space (phi, theta)
+
+        Args:
+            freq: Frequency to calculate the array factor
+            
+        Returns:
+           Array factor
+        """
         
         def CalculateRelativePhase(element_pos, Lambda, PHI, THETA):
             """
-            Incident wave treated as plane wave. Phase at element is referred to phase of plane wave at origin.
-            Element = element_pos
-            THETA & PHI in radians
-            Lambda in Hz
-            See Eqn 3.1 @ https://theses.lib.vt.edu/theses/available/etd-04262000-15330030/unrestricted/ch3.pdf
+            _summary_
+
+            Args:
+                element_pos: Tuple with element position in (x, y, z) coordinates
+                Lambda: wavelength in meters
+                PHI: phi 2D matrix
+                THETA: theta 2D matrix
+
+            Returns:
+                Relative phase for the given element in (x, y, z) in all space (for all phi/theta).
             """
             phaseConstant = (2 * np.pi / Lambda)
 
@@ -113,14 +140,47 @@ class Array:
         for eleIdx, element in enumerate(self.elements):
             kd = CalculateRelativePhase(element.get_position(), Lambda, self.PHI, self.THETA)
             AF += wAmp[eleIdx] * np.exp((kd + element.phase) * 1j)
-        # Power in dB
-        AFdB = 20*np.log10(np.abs(AF))
     
-        return AFdB
+        # Returns power in dB
+        return 20*np.log10(np.abs(AF))
 
         
-    def arrayPattern(self, freq):
+    def arrayPattern(self, freq:float):
+        """
+        Returns array pattern at the specified frequency. It will be the sum of element 
+        pattern and Array Factor in dB, since elemennt pattern will be the same for all elements.
+
+        Args:
+            freq: Frequency in MHz
+
+        Returns:
+            Array pattern
+        """
         return self.arrayFactor(freq) + self.elePattern
     
+
+    def plot_array(self):
+        """
+        Plots the array configuretion
+
+        Raises:
+            ValueError: If x-position it is not null for all elements in array, 
+            it is not possible to plot the array in 2D.
+        """
+        if all(ele.xpos == self.elements[0].xpos for ele in self.elements):
+            fig, ax = plt.subplots(1, 1, figsize=(10,3.5))
+            ax.set_xlabel('Z-position (mm)')
+            ax.set_ylabel('Y-position (mm)')
+            sns.set_theme()
+            for ele in self.elements:
+                ax.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, 
+                    markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
+                # plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
+                ax.annotate(f'{ele.amplitude}, {ele.phase}º', (ele.zpos*1000, ele.ypos*1000))
+            plt.show()
+        else:
+            raise ValueError('Cannot plot 3D arrays')
+
+
     def __repr__(self):
         return f'Array of {self.nElements} elements.'
