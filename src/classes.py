@@ -176,7 +176,8 @@ class Array:
                 ax.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, 
                     markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
                 # plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
-                ax.annotate(f'{ele.amplitude}, {ele.phase}º', (ele.zpos*1000, ele.ypos*1000))
+                ax.annotate(f'{ele.amplitude}, {np.rint(np.rad2deg(ele.phase))}º', 
+                            (ele.zpos*1000, ele.ypos*1000))
             plt.show()
         else:
             raise ValueError('Cannot plot 3D arrays')
