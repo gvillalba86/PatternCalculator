@@ -161,7 +161,7 @@ class Array:
 
     def plot_array(self):
         """
-        Plots the array configuretion
+        Plots the array configuration
 
         Raises:
             ValueError: If x-position it is not null for all elements in array, 
