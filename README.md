@@ -22,8 +22,8 @@ Jupyter notebook file "arrayExample" contains some examples of use of the packag
 
 ## To be done:
 
-* Add frequency vector as a attribute to the array class to compute multiple frequencies calculations at once.
-* Add multiple element radiation patterns to the array, one for every frequency.
+* Add frequency vector as an attribute to the array class to compute multiple frequencies calculations at once.
+* Add multiple element radiation patterns to the array, one for each frequency.
 
 ## License
 
