@@ -183,5 +183,16 @@ class Array:
             raise ValueError('Cannot plot 3D arrays')
 
 
+    def __len__(self):
+        return self.nElements
+    
+    
+    def __getitem__(self, pos):
+        return self.elements[pos]
+    
+        
     def __repr__(self):
-        return f'Array of {self.nElements} elements.'
+        repr_str = str()
+        for i, ele in enumerate(self.elements):
+            repr_str += f'#{i}: {ele}\n'
+        return repr_str
