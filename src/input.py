@@ -3,15 +3,15 @@ import pandas as pd
 from .classes import RadiantElement
 
 
-def loadElePattern(filename):
+def loadElePattern(filename:str):
     """
-    Loads a file containing a 
+    Loads a file containing a diagram patterns for all space and several frequencies
 
     Args:
         filename: path to file containing the data
 
     Returns:
-        _description_
+        3D Numpy array containing patterns for all space (theta, phi) and frequencies
     """    
     df = pd.read_csv(filename)
     nFreq = df.iloc[:,0].nunique()

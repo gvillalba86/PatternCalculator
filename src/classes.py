@@ -173,11 +173,16 @@ class Array:
             ax.set_ylabel('Y-position (mm)')
             sns.set_theme()
             for ele in self.elements:
-                ax.plot(ele.zpos*1000, ele.ypos*1000, marker="o", markersize=20, 
-                    markeredgecolor="tomato", markerfacecolor="mediumaquamarine")
-                # plt.text(ele.xpos*1000, ele.ypos*1000, f'{ele.amplitude} ∠ {ele.phase}º')
-                ax.annotate(f'{ele.amplitude}, {np.rint(np.rad2deg(ele.phase))}º', 
-                            (ele.zpos*1000, ele.ypos*1000))
+                ax.scatter(ele.zpos*1000, ele.ypos*1000, marker="x", s=200, 
+                    linewidths=5, c="firebrick")
+                ax.annotate(ele.amplitude, 
+                            xy = (ele.zpos*1000, ele.ypos*1000),
+                            xytext=(-5, 15),
+                            textcoords='offset points')
+                ax.annotate(f'{np.rint(ele.phase)}º', 
+                            xy = (ele.zpos*1000, ele.ypos*1000),
+                            xytext=(-15, -25),
+                            textcoords='offset points')
             plt.show()
         else:
             raise ValueError('Cannot plot 3D arrays')
