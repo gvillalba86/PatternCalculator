@@ -159,7 +159,7 @@ class Array:
         return self.arrayFactor(freq) + self.elePattern
     
 
-    def plot_array(self):
+    def plotArray(self):
         """
         Plots the array configuration
 
@@ -179,7 +179,7 @@ class Array:
                             xy = (ele.zpos*1000, ele.ypos*1000),
                             xytext=(-5, 15),
                             textcoords='offset points')
-                ax.annotate(f'{np.rint(ele.phase)}º', 
+                ax.annotate(f'{np.rint(np.rad2deg(ele.phase))}º', 
                             xy = (ele.zpos*1000, ele.ypos*1000),
                             xytext=(-15, -25),
                             textcoords='offset points')
